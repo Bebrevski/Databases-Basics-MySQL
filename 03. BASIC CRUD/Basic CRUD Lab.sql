@@ -36,4 +36,8 @@ WHERE department_id = 4 AND salary >= 1600.00
 ORDER BY id;
 
 #-- Problem 6: Delete from Table
+DELETE FROM `employees`
+WHERE `department_id` IN (1, 2);
 
+SELECT * FROM `employees`
+ORDER BY `id` ASC;
