@@ -80,8 +80,73 @@ GROUP BY `first_letter`
 ORDER BY `first_letter`;
 
 #-- 11.	Average Interest 
+SELECT 
+    `deposit_group`,
+    `is_deposit_expired`,
+    AVG(`deposit_interest`) AS 'average_interest'
+FROM
+    `wizzard_deposits`
+WHERE
+    `deposit_start_date` > '1985-01-01'
+GROUP BY `deposit_group` , `is_deposit_expired`
+ORDER BY `deposit_group` DESC , `is_deposit_expired`;
 
+#-- 12.	Rich Wizard, Poor Wizard*
+SELECT 
+    SUM(`hw`.`deposit_amount` - `gw`.`deposit_amount`) AS 'difference'
+FROM
+    `wizzard_deposits` AS `hw`,
+    `wizzard_deposits` AS `gw`
+WHERE
+    `gw`.`id` - `hw`.`id` = 1;
 
+#-- 13.	 Employees Minimum Salaries
+USE `soft_uni`;
+
+SELECT 
+    `department_id`, MIN(`salary`) AS 'minimum_salary'
+FROM
+    `employees`
+WHERE
+    `hire_date` > '2000-01-01'
+GROUP BY `department_id`
+HAVING `department_id` IN (2 , 5, 7)
+ORDER BY `department_id`;
+
+#-- 14.	Employees Average Salaries
+SELECT 
+    `department_id`,
+    CASE
+        WHEN `department_id` = 1 THEN AVG(`salary`) + 5000
+        ELSE AVG(`salary`)
+    END AS 'avg_salary'
+FROM
+    `employees`
+WHERE
+    `salary` > 30000 AND `manager_id` != 42
+GROUP BY `department_id`
+ORDER BY `department_id`;
+
+#-- 15. Employees Maximum Salaries
+SELECT `department_id`, MAX(`salary`) AS 'max_salary'
+FROM `employees`
+GROUP BY `department_id`
+HAVING MAX(`salary`) NOT BETWEEN 30000 AND 70000
+ORDER BY `department_id`;
+
+#-- 16.	Employees Count Salaries
+SELECT 
+    COUNT(`salary`)
+FROM
+    `employees`
+WHERE
+    ISNULL(`manager_id`);
+
+#-- 17.	3rd Highest Salary*
+SELECT `department_id`, MAX(`salary`) AS 'third_highest_salary'
+FROM `employees`
+GROUP BY `department_id`
+ORDER BY `department_id`;
 
 
 
