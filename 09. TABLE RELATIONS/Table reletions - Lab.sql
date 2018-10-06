@@ -61,22 +61,22 @@ CREATE TABLE `peaks`(
 CREATE DATABASE `company`;
 USE `company`;
 
-CREATE TABLE `employees` (
-    `id` INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY UNIQUE,
-    `first_name` VARCHAR(30) NOT NULL,
-    `last_name` VARCHAR(30) NOT NULL,
-    `project_id` INT(11) UNSIGNED
-);
-
 CREATE TABLE `projects` (
-    `id` INT(11) UNSIGNED UNIQUE PRIMARY KEY AUTO_INCREMENT,
+    `id` INT(11) UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY,
     `client_id` INT(11) UNSIGNED,
     `project_lead_id` INT(11) UNSIGNED
 );
 
 CREATE TABLE `clients` (
-    `id` INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY UNIQUE,
+    `id` INT(11) UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY,
     `client_name` VARCHAR(100) NOT NULL,
+    `project_id` INT(11) UNSIGNED
+);
+
+CREATE TABLE `employees` (
+    `id` INT(11) UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY,
+    `first_name` VARCHAR(30) NOT NULL,
+    `last_name` VARCHAR(30) NOT NULL,
     `project_id` INT(11) UNSIGNED
 );
 
@@ -89,12 +89,12 @@ ALTER TABLE `projects`
         REFERENCES `employees` (`id`);
 
 ALTER TABLE `clients`
-	ADD CONSTRAINT `fk_clients_projects`
+    ADD CONSTRAINT `fk_clients_projects` 
 		FOREIGN KEY (`project_id`)
-        REFERENCES `projects`(`id`);
+        REFERENCES `projects` (`id`);
 
 ALTER TABLE `employees`
-	ADD CONSTRAINT `fk_employees_projects`
+    ADD CONSTRAINT `fk_employees_projects` 
 		FOREIGN KEY (`project_id`)
-        REFERENCES `projects`(`id`);
+        REFERENCES `projects` (`id`);
 
