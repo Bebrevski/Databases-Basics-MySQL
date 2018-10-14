@@ -139,10 +139,116 @@ DELIMITER ;
 SELECT ufn_calculate_future_value(1000, 0.1, 5);
 
 #-- 11.	Calculating Interest
+DELIMITER $$
+CREATE PROCEDURE usp_calculate_future_value_for_account(
+	in_account_id INT, 
+	interest_rate DECIMAL(19, 4))
+BEGIN
+	SELECT 
+		a.id AS account_id, 
+        ah.first_name, 
+        ah.last_name,
+        a.balance AS current_balance,
+        ufn_calculate_future_value(a.balance, interest_rate, 5) AS balance_in_5_years
+	FROM account_holders AS ah
+    INNER JOIN accounts AS a
+    ON a.account_holder_id = ah.id
+    WHERE a.id = in_account_id;
+END $$
 
+DELIMITER ;
 
+CALL usp_calculate_future_value_for_account(1, 0.1);
 
+#Another solution without using the procedure from the previous task
 
+#CREATE PROCEDURE usp_calculate_future_value_for_account(
+#    acc_id INT(11),
+#    rate DECIMAL(19,4))
+#BEGIN
+#    DECLARE value DECIMAL(19,4);
+#    DECLARE balance DECIMAL(19,4);
+#    SET balance := (SELECT a.balance FROM accounts AS a WHERE a.id = acc_id);
+#    SET value := balance * (pow(1 + rate, 5));
+#    SELECT
+#        a.id AS 'account_id',
+#        ah.first_name,
+#        ah.last_name,
+#        balance AS 'current_balance',
+#        value AS 'balance_in_5_years'
+#    FROM accounts AS a
+#        JOIN account_holders AS ah
+#        ON a.account_holder_id = ah.id
+#        AND
+#        a.id = acc_id;
+#END
 
+#-- 12.	Deposit Money
+DELIMITER $$
+CREATE PROCEDURE usp_deposit_money(account_id INT, money_amount DECIMAL(19, 4))
+BEGIN
+	IF money_amount > 0 THEN
+		START TRANSACTION;
+		
+		UPDATE accounts AS a
+		SET a.balance = a.balance + money_amount
+		WHERE a.id = account_id;
+		
+		IF (
+			SELECT a.balance
+			FROM accounts AS a
+			WHERE a.id = account_id
+		) < 0
+		THEN ROLLBACK;
+		ELSE COMMIT;
+		END IF;
+	END IF;
+END $$
+
+DELIMITER ;
+
+CALL usp_deposit_money(1, 10);
+
+SELECT 
+    a.id AS account_id, a.account_holder_id, a.balance
+FROM
+    accounts AS a
+WHERE
+    a.id = 1;
+    
+#-- 13.	Withdraw Money
+DELIMITER $$
+CREATE PROCEDURE usp_withdraw_money(account_id INT, money_amount DECIMAL(19, 4))
+BEGIN
+	IF money_amount > 0 THEN
+		START TRANSACTION;
+		
+		UPDATE accounts AS a
+		SET a.balance = a.balance - money_amount
+		WHERE a.id = account_id;
+		
+		IF (
+			SELECT a.balance
+			FROM accounts AS a
+			WHERE a.id = account_id
+		) < money_amount
+		THEN ROLLBACK;
+		ELSE COMMIT;
+		END IF;
+	END IF;
+END $$
+
+DELIMITER ;
+
+CALL usp_withdraw_money(1, 10);
+
+SELECT 
+    a.id AS account_id, a.account_holder_id, a.balance
+FROM
+    accounts AS a
+WHERE
+    a.id = 1;
+    
+#-- 14.	Money Transfer
 
 
