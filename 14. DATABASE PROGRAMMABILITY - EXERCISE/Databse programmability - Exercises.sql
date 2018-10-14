@@ -80,7 +80,18 @@ BEGIN
     ORDER BY e.first_name DESC, e.last_name DESC;
 END $$
 DELIMITER ;
-	
+
+#-- 7.	Define Function
+CREATE FUNCTION ufn_is_word_comprised(set_of_letters varchar(50), word varchar(50))
+RETURNS BIT
+DETERMINISTIC
+RETURN word REGEXP (CONCAT('^[', set_of_letters, ']+$'));
+
+SELECT ufn_is_word_comprised('oistmiahf', 'Sofia');
+
+#-- 8.	Find Full Name
+USE bank;
+
 
 
 
