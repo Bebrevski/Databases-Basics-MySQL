@@ -92,9 +92,53 @@ SELECT ufn_is_word_comprised('oistmiahf', 'Sofia');
 #-- 8.	Find Full Name
 USE bank;
 
+DELIMITER $$
+CREATE PROCEDURE usp_get_holders_full_name()
+BEGIN
+	SELECT CONCAT_WS(' ', ah.first_name, ah.last_name) AS full_name
+    FROM account_holders AS ah
+    ORDER BY full_name, ah.id;
+END $$
 
+DELIMITER ;
+CALL usp_get_holders_full_name();
 
+#-- 9.	People with Balance Higher Than
+DELIMITER $$
+CREATE PROCEDURE usp_get_holders_with_balance_higher_than(balance_limit DECIMAL(20,4))
+BEGIN
+	SELECT ah.first_name, ah.last_name
+    FROM account_holders AS ah
+    INNER JOIN (
+		SELECT a.id, a.account_holder_id, SUM(a.balance) AS total_balance
+        FROM accounts AS a
+        GROUP BY a.account_holder_id
+        HAVING total_balance > balance_limit
+    ) AS a ON ah.id = a.account_holder_id
+    ORDER BY ah.first_name, ah.last_name;
+END $$
 
+DELIMITER ;
+CALL usp_get_holders_with_balance_higher_than(7000);
+
+#-- 10.	Future Value Function
+DELIMITER $$
+CREATE FUNCTION ufn_calculate_future_value(
+	in_sum DOUBLE, 
+    yearly_interest_rate DOUBLE, 
+    number_of_years INT)
+RETURNS DOUBLE
+DETERMINISTIC
+BEGIN
+	DECLARE result DOUBLE;
+    SET result := in_sum * POW((1 + yearly_interest_rate), number_of_years);
+	RETURN result;
+END $$
+
+DELIMITER ;
+SELECT ufn_calculate_future_value(1000, 0.1, 5);
+
+#-- 11.	Calculating Interest
 
 
 
