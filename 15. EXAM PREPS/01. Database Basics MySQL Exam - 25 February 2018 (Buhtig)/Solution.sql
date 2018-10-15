@@ -112,12 +112,54 @@ WHERE i.id IS NULL;
 
 #                             Section 3: Querying
 #-- 05.	Users
+SELECT u.id, u.username
+FROM users AS u
+ORDER BY u.id;
 
+#--06.	Lucky Numbers
+SELECT *
+FROM repositories_contributors AS rc
+WHERE rc.repository_id = rc.contributor_id
+ORDER BY rc.repository_id;
 
+#-- 07.	Heavy HTML
+SELECT f.id, f.name, f.size
+FROM files AS f
+WHERE f.size > 1000 AND f.name LIKE '%html%'
+ORDER BY f.size DESC;
 
+#-- 08.	Issues and Users
+SELECT 
+    i.id,
+    CONCAT_WS(' : ', u.username, i.title) AS issue_assignee
+FROM issues AS i
+	JOIN users AS u 
+	ON i.assignee_id = u.id
+ORDER BY i.id DESC;
 
+#-- 09.	Non-Directory Files
+SELECT
+	f.id,
+    f.name,
+    CONCAT(f.size, 'KB') AS 'size'
+FROM files AS f
+	LEFT JOIN files AS f2
+	ON f.id = f2.parent_id
+	WHERE f2.id IS NULL;
 
+#-- 10.	Active Repositories
+SELECT
+	r.id,
+    r.name,
+    COUNT(i.id) AS issues
+FROM repositories AS r
+	INNER JOIN issues AS i
+    ON i.repository_id = r.id
+GROUP BY r.id
+ORDER BY issues DESC, r.id
+LIMIT 5;
 
+#-- 11.	Most Contributed Repository
 
 
 
