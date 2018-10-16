@@ -206,6 +206,97 @@ FROM files AS f1
 GROUP BY f1.id
 ORDER BY f1.name;
 
+#-- 14.	Repositories and Commits
+SELECT
+	r.id,
+    r.name,
+    COUNT(DISTINCT(c.contributor_id)) AS users
+FROM repositories AS r
+	LEFT JOIN commits AS c
+    ON r.id = c.repository_id
+GROUP BY r.id
+ORDER BY users DESC, r.id;
+
+#                        Section 4: Programmability 
+#-- 15.	Commit
+DELIMITER $$
+CREATE PROCEDURE udp_commit(
+	username VARCHAR(30),
+	password VARCHAR(30), 
+	message VARCHAR(255), 
+	issue_id INT(11))
+BEGIN
+
+	DECLARE user_id INT(11);
+    DECLARE repository_id INT(11);
+    
+	IF 1 <> (SELECT COUNT(*) FROM users AS u WHERE u.username = username)
+    THEN 
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'No such user!';
+    END IF;
+    
+    IF 1 <> (
+		SELECT COUNT(*) FROM users AS u 
+		WHERE u.username = username AND u.password = password
+	)
+    THEN 
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Password is incorrect!';
+    END IF;
+    
+    IF 1 <> (
+		SELECT COUNT(*) FROM issues AS i 
+		WHERE i.id = issue_id)
+    THEN 
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'The issue does not exist!';
+    END IF;
+    
+	SET user_id := (
+		SELECT u.id
+		FROM users AS u
+		WHERE u.username = username
+	);
+    
+    SET repository_id := (
+		SELECT i.repository_id
+		FROM issues AS i
+		WHERE i.id = issue_id
+    );
+    
+    INSERT INTO commits (
+							repository_id, 
+							contributor_id, 
+							issue_id, 
+							message)
+	VALUES (repository_id, user_id, issue_id, message);
+    
+    UPDATE issues
+    SET issue_status = 'closed'
+    WHERE issue_id = issue_id;
+    
+END $$
+
+DELIMITER ;
+CALL udp_commit(
+	'WhoDenoteBel',
+	'ajmISQi*',
+	'Fixed Issue: Invalid welcoming message in READ.html',
+	2);
+
+#-- 16.	Filter Extensions
+DELIMITER $$
+CREATE PROCEDURE udp_findbyextension(extention VARCHAR(100))
+BEGIN
+	SELECT f.id, f.name, CONCAT(f.size, 'KB') 
+    FROM files AS f 
+    WHERE f.name LIKE CONCAT('%.', extention);
+END $$
+
+DELIMITER ;
+
+CALL udp_findbyextension('html');
 
 
 
