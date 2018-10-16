@@ -139,15 +139,16 @@ ORDER BY i.id DESC;
 
 #-- 09.	Non-Directory Files
 SELECT
-	f.id,
-    f.name,
-    CONCAT(f.size, 'KB') AS 'size'
+	d.id,
+    d.name,
+    CONCAT(d.size, 'KB') AS 'size'
 FROM files AS f
-	LEFT JOIN files AS f2
-	ON f.id = f2.parent_id
-	WHERE f2.id IS NULL;
+	RIGHT JOIN files AS d
+	ON f.parent_id = d.id
+	WHERE d.id IS NULL;
 
 #-- 10.	Active Repositories
+#Correct way to solve the problem is to get information from issues and join to repos
 SELECT
 	r.id,
     r.name,
@@ -160,8 +161,50 @@ ORDER BY issues DESC, r.id
 LIMIT 5;
 
 #-- 11.	Most Contributed Repository
+SELECT 
+    RC.id, r.name, COUNT(c.id) AS commits, RC.contributors
+FROM
+    (SELECT 
+        rc.repository_id AS id,
+            COUNT(rc.contributor_id) AS contributors
+    FROM
+        repositories_contributors AS rc
+    GROUP BY id
+    ORDER BY contributors DESC , id
+    LIMIT 1) AS RC
+JOIN repositories AS r ON RC.id = r.id
+JOIN commits AS c ON RC.id = c.repository_id;
+  
+#-- 12.	Fixing My Own Problems
+SELECT 
+    u.id, 
+    u.username, 
+	(
+    SELECT COUNT(c.id) 
+    FROM commits AS c
+		JOIN issues AS i 
+        ON i.id = c.issue_id
+	WHERE 
+		i.assignee_id = u.id AND c.contributor_id = u.id
+    ) AS commits
+FROM users AS u
+ORDER BY commits DESC, u.id;
 
-
+#-- 13.	Recursive Commits
+SELECT 
+	LEFT(f1.name, LOCATE('.', f1.name) - 1) AS file, 
+	(
+    SELECT COUNT(*) 
+    FROM commits AS c 
+    WHERE c.message LIKE CONCAT('%', f1.name, '%')
+    ) AS recursive_count
+FROM files AS f1
+	JOIN files AS f2
+	ON  f1.parent_id = f2.id AND 
+		f2.parent_id = f1.id AND 
+		f1.id <> f2.id
+GROUP BY f1.id
+ORDER BY f1.name;
 
 
 
