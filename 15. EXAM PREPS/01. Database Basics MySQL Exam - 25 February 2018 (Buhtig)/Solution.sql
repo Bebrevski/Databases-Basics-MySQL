@@ -95,14 +95,30 @@ JOIN(
                 repository_id
             FROM
                 repositories_contributors)
-                
 			ORDER BY r.id
 			LIMIT 1
-	) AS j 
+			) AS j 
 SET 
     rc.repository_id = j.repo
 WHERE
     rc.contributor_id = rc.repository_id;
+    
+#------------------------------------
+# Second solution for task 3
+INSERT INTO repositories_contributors(contributor_id, repository_id)
+SELECT *
+FROM (
+		SELECT contributor_id
+		FROM repositories_constributors
+		WHERE contributor_id = repository_id) AS t1
+CROSS JOIN (
+		SELECT MIN(r.id) AS repository_id
+        FROM repositories r
+        LEFT JOIN repositories_contributors rc
+        ON r.id = rc.repository_id
+        WHERE rc.repository_id IS NULL) AS t2
+WHERE t2.repository_id IS NOT NULL;
+#------------------------------------
 
 #-- 04.	Data Deletion
 DELETE r 
