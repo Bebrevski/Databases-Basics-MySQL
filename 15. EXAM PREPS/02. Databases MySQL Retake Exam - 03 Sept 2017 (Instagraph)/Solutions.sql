@@ -138,27 +138,132 @@ GROUP BY uf.user_id
 ORDER BY followers DESC
 LIMIT 1;
 
-#-- 12.	Commenting Myself (NOT GOOD)
-SELECT
-    u.id,
-    u.username,
-    COUNT(c.id) AS my_comments
-FROM posts AS p
-	JOIN users AS u
-	ON p.user_id = u.id
-	LEFT JOIN comments AS c
-	ON c.post_id = p.id
-WHERE p.id = c.post_id AND p.user_id = c.user_id
-GROUP BY u.id
-ORDER BY my_comments DESC, u.id;
+#-- 12.	Commenting Myself (!!!)
+SELECT 
+	u.id, 
+    u.username, 
+    (CASE 
+		WHEN  tb.my_comments IS NULL 
+        THEN 0 
+        ELSE tb.my_comments 
+	END) as my_comments
+FROM users u
+LEFT JOIN
+	(
+		SELECT p.id, p.user_id, count(p.id) as my_comments
+		FROM posts p
+		JOIN comments c
+		ON p.id = c.post_id
+		WHERE p.user_id = c.user_id
+		GROUP BY p.user_id
+    ) as tb
+ON u.id = tb.user_id
+ORDER BY tb.my_comments DESC, u.id;
 
 #-- 13.	User Top Posts
 
 #--14.	Posts and Commentators
 	
     
-#                                Section 4: Programmability
+#                             Section 4: Programmability
 #-- 15.	Post
+#DROP PROCEDURE udp_post;
+DELIMITER $$
+CREATE PROCEDURE udp_post(
+	username VARCHAR(30),
+	password VARCHAR(30), 
+	caption VARCHAR(255), 
+	path VARCHAR(255))
+BEGIN
+
+	DECLARE user_id INT(11);
+    DECLARE picture_id INT(11);
+
+	IF ((
+		SELECT u.password 
+        FROM users AS u
+        WHERE u.username = username
+	) <> password)
+    THEN 
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Password is incorrect!';
+	END IF;
+    
+    IF ((
+		SELECT COUNT(p.path) 
+        FROM pictures AS p
+        WHERE p.path = path) = 0)
+    THEN 
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'The picture does not exist!';
+    END IF;
+    
+    SET user_id := (
+		SELECT id
+		FROM users AS u
+		WHERE u.username = username 
+	);
+    
+    SET picture_id := (
+		SELECT p.id
+		FROM pictures AS p
+		WHERE p.path LIKE path 
+	);
+    
+    INSERT INTO posts (caption, user_id, picture_id)
+    VALUES (caption, user_id, picture_id);
+    
+END $$
+
+DELIMITER ;
+
+CALL udp_post (
+		'UnderSinduxrein',
+        '4l8nYGTKMW',
+        '#new #procedure',
+        'src/folders/resources/images/story/reformatted/img/hRI3TW31rC.img'
+		);
+
+CALL udp_post (
+		'UnderSinduxrein',
+        '4l8nYGTKMW',
+        '#new #procedure',
+        'src/.img'
+		);
+        
+CALL udp_post (
+		'UnderSinduxrein',
+        '***',
+        '#new #procedure',
+        'src/folders/resources/images/story/reformatted/img/hRI3TW31rC.img'
+		);
+        
+#-- 16.	Filter
+DROP PROCEDURE udp_filter;
+DELIMITER $$
+CREATE PROCEDURE udp_filter(hashtag VARCHAR(255))
+BEGIN
+
+	SELECT
+		p.id,
+		p.caption,
+        u.username
+    FROM posts AS p
+    JOIN users AS u
+    ON p.user_id = u.id
+    WHERE p.caption LIKE CONCAT('%', CONCAT('#', hashtag), '%')
+    ORDER BY p.id;
+
+END $$
+
+DELIMITER ;
+
+CALL udp_filter('cool');
+
+
+
+
+
 
 
 
