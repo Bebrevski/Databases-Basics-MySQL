@@ -182,9 +182,28 @@ ON u.id = tb.user_id
 ORDER BY tb.my_comments DESC, u.id;
 
 #-- 13.	User Top Posts
+SELECT cq.user_id, u.username, cq.caption
+FROM 
+(
+	SELECT p.id, p.user_id, p.caption, count(c.id) AS comments_count
+    FROM posts AS p
+    LEFT JOIN comments AS c ON c.post_id = p.id
+    GROUP BY p.id
+    ORDER BY comments_count DESC, p.id
+) AS cq
+JOIN users AS u ON cq.user_id = u.id
+GROUP BY cq.user_id
+ORDER BY cq.user_id;
 
 #--14.	Posts and Commentators
-	
+SELECT 
+	p.id, 
+    p.caption, 
+    COUNT(DISTINCT(c.user_id)) AS users
+FROM posts AS p
+LEFT JOIN comments AS c ON c.post_id = p.id
+GROUP BY p.id
+ORDER BY users DESC, p.id;
     
 #                             Section 4: Programmability
 #-- 15.	Post
