@@ -59,13 +59,34 @@ CREATE TABLE users_followers(
 
 #                           Section 2: Data Manipulation Language (DML) 
 #-- 02.	Data Insertion
-
+INSERT INTO comments(content, user_id, post_id)
+	SELECT
+		
+        CONCAT('Omg!', u.username, '!This is so cool!') AS content,
+        
+		CEIL(p.id * 3 / 2) AS user_id,
+        
+        p.id AS post_id
+        
+	FROM posts AS p
+    JOIN users AS u ON p.user_id = u.id
+    WHERE p.id BETWEEN 1 AND 10;
 
 #-- 03.	Data Update
-
+UPDATE users AS u 
+SET u.profile_picture_id = (SELECT COUNT(uf.follower_id) 
+							FROM users_followers AS uf
+                            WHERE u.id = uf.user_id
+                            GROUP BY uf.user_id)
+WHERE u.profile_picture_id IS NULL;
+                            
 
 #-- 04.	Data Deletion
-
+DELETE u 
+FROM users AS u
+LEFT JOIN users_followers AS uf
+ON u.id = uf.user_id
+WHERE uf.user_id IS NULL AND uf.follower_id IS NULL;
 
 #                                     Section 3: Querying
 #-- 05.	Users
@@ -239,7 +260,7 @@ CALL udp_post (
 		);
         
 #-- 16.	Filter
-DROP PROCEDURE udp_filter;
+#DROP PROCEDURE udp_filter;
 DELIMITER $$
 CREATE PROCEDURE udp_filter(hashtag VARCHAR(255))
 BEGIN
