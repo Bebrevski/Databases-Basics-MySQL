@@ -67,10 +67,34 @@ ALTER TABLE users_contests
         REFERENCES contests(id);
 
 #-- 02.	Data Insertion
+INSERT INTO submissions(passed_tests, problem_id, user_id)
 
+SELECT
+	CEIL(SQRT(POW(LENGTH(p.name), 3)) - LENGTH(p.name)) AS passed_tests,
+    p.id AS problem_id,
+    CEIL(p.id * 3 / 2) AS user_id
+FROM problems AS p
+WHERE p.id BETWEEN 1 AND 10;
+	
 #-- 03.	Data Update
+UPDATE problems AS p
+        JOIN
+    contests AS c ON c.id = p.contest_id
+        JOIN
+    categories AS cat ON cat.id = c.category_id 
+SET 
+    p.tests = CASE (p.id % 3)
+        WHEN 0 THEN LENGTH(cat.name)
+        WHEN 1 THEN (SELECT SUM(s.id) FROM submissions AS s WHERE s.problem_id = p.id)
+        WHEN 2 THEN CHAR_LENGTH(c.name)
+    END
+WHERE p.tests = 0;
 
 #-- 04.	Date Deletion
+DELETE u
+FROM users AS u
+LEFT JOIN users_contests AS uc ON u.id = uc.user_id
+WHERE uc.user_id IS NULL;
 
 #-- 05.	Users
 SELECT
@@ -135,10 +159,55 @@ FROM
 ORDER BY f.contestants, f.id;
 
 #-- 12.	Most Valuable Person
+SELECT 
+    s.id,
+    u.username,
+    p.name,
+    CONCAT(s.passed_tests, ' / ', p.tests) AS result
+FROM
+    submissions AS s
+        JOIN
+    problems AS p ON s.problem_id = p.id
+        JOIN
+    users AS u ON s.user_id = u.id
+WHERE
+    u.id = (
+		SELECT 
+            uc.user_id
+        FROM
+            users_contests AS uc
+        GROUP BY uc.user_id
+        ORDER BY COUNT(uc.contest_id) DESC
+        LIMIT 1)
+ORDER BY s.id DESC;
 
 #-- 13.	Contests Maximum Points
+SELECT
+	pp.contest_id, 
+    c.name, 
+    pp.maximum_points
+FROM (
+	SELECT *, SUM(points) AS maximum_points
+	FROM problems
+	GROUP BY contest_id) AS pp
+LEFT JOIN contests AS c ON pp.contest_id = c.id
+ORDER BY maximum_points DESC, c.id;
 
 #-- 14.	Contestants’ Submissions
+SELECT 
+    c.id, c.name, COUNT(s.id) AS submissions
+FROM
+    contests AS c
+        JOIN
+    problems AS p ON c.id = p.contest_id
+        JOIN
+    submissions AS s ON p.id = s.problem_id
+        JOIN
+    users_contests AS uc ON c.id = uc.contest_id
+WHERE
+    s.user_id = uc.user_id
+GROUP BY c.id
+ORDER BY submissions DESC , c.id;
 
 #-- 15.	Login
 CREATE TABLE logged_in_users(
@@ -149,7 +218,7 @@ CREATE TABLE logged_in_users(
 );
 
 DELIMITER $$
-DROP PROCEDURE udp_login;
+#DROP PROCEDURE udp_login;
 
 CREATE PROCEDURE udp_login(username VARCHAR(30), password VARCHAR(30))
 BEGIN
@@ -197,13 +266,12 @@ END $$
 
 DELIMITER ;
 CALL udp_login('doge', 'doge');
-SELECT * FROM logged_in_users;
 
-CALL udp_login('dogeeee', 'doge');
+#CALL udp_login('dogeeee', 'doge');
 
-CALL udp_login('doge', 'dogeeee');
+#CALL udp_login('doge', 'dogeeee');
 
-CALL udp_login('doge', 'doge');
+#CALL udp_login('doge', 'doge');
 
 # Another way to make validation checks
 
@@ -228,7 +296,7 @@ CREATE TABLE evaluated_submissions(
     result INT(11) NOT NULL
 );
 
-DROP PROCEDURE udp_evaluate;
+#DROP PROCEDURE udp_evaluate;
 
 DELIMITER $$
 CREATE PROCEDURE udp_evaluate(id INT(11))
