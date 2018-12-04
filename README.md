@@ -1,2 +1,2 @@
-# JS-Aplications
-Third course of JS Core module
+# Databases-Basics-MySQL
+Java - SoftUni course. First part of Java DB Fundamentals module
